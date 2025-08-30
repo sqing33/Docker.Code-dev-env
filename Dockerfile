@@ -28,6 +28,7 @@ RUN mkdir -p ${GOPATH}/bin ${GOPATH}/src
 # SSH服务器配置
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
   sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
+  echo 'Port 18822' >> /etc/ssh/sshd_config && \
   mkdir -p /run/sshd
 
 
