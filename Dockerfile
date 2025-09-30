@@ -54,16 +54,17 @@ RUN pip install uv && \
 RUN mkdir -p /app/pnpm_store && \
     pnpm config set store-dir /app/pnpm_store
 
-# 4. SSH服务器配置
+# 4. SSH服务器配置 (修复: 启用 TCP 转发)
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
+    echo 'AllowTcpForwarding yes' >> /etc/ssh/sshd_config && \
     echo 'Port 18822' >> /etc/ssh/sshd_config && \
     mkdir -p /run/sshd
 
 # 5. 配置 Zsh (Oh My Zsh, P10k 主题, 插件)
 # Zsh 插件目录
 ENV ZSH_CUSTOM /root/.oh-my-zsh/custom/
-# 1) 安装 Oh My Zsh (使用 curl, 因为 git 在 Alpine 上可能会缺失一些运行时依赖，用 curl 更保险)
+# 1) 安装 Oh My Zsh
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended && \
     # 2) 安装 Powerlevel10k 主题 (通过 git clone)
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k && \
