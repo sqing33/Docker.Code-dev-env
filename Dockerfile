@@ -5,11 +5,13 @@ FROM debian:bookworm-slim AS builder
 WORKDIR /app
 
 # 1. 安装 Go 编译所需的系统工具和依赖
+# **重要修复:** 添加 ca-certificates 解决 curl SSL 错误 (exit code 77)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         curl \
         tar \
-        build-essential && \
+        build-essential \
+        ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # 2. Go 安装 (在 builder 阶段完成，最终产物将被复制)
@@ -31,7 +33,7 @@ FROM python:3.12-alpine
 WORKDIR /app
 
 # 1. 安装 Alpine 上的运行时依赖
-# 添加 nodejs, npm, zsh, git, fzf, 和 shadow (用于 chsh 命令)
+# 添加 nodejs, npm, zsh, git, fzf, shadow (用于 chsh 命令)
 RUN apk add --no-cache \
     openssh-server \
     sudo \
