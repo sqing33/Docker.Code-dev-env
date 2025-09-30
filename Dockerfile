@@ -69,11 +69,9 @@ ENV ZSH_CUSTOM /root/.oh-my-zsh/custom/
 RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/install_omz.sh && \
     sh /tmp/install_omz.sh --unattended && \
     rm /tmp/install_omz.sh
-# 2) 安装 Powerlevel10k 主题
-RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
-# 3) 安装 zsh-autosuggestions 插件
+# 2) 安装 zsh-autosuggestions 插件
 RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
-# 4) 安装 zsh-syntax-highlighting 插件
+# 3) 安装 zsh-syntax-highlighting 插件
 RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
 
 # 6. 创建 .zshrc 配置 (优化版本)
@@ -81,7 +79,7 @@ RUN echo '# Path to your oh-my-zsh installation.' > /root/.zshrc && \
     echo 'export ZSH="/root/.oh-my-zsh"' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo '# Set name of the theme to load' >> /root/.zshrc && \
-    echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> /root/.zshrc && \
+    echo 'ZSH_THEME="robbyrussell"' >> /root/.zshrc && \
     echo '# To enable Powerlevel10k instant prompt, run `p10k configure` and restart zsh' >> /root/.zshrc && \
     echo '# POWERLEVEL9K_INSTANT_PROMPT=quiet' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
