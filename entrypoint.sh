@@ -15,15 +15,12 @@ fi
 # --- 环境设置 ---
 echo "Go environment variables (PATH, GOPATH) configured."
 
-# --- 密码设置 (SSH 登录所必需) ---
-# 为 root 用户设置一个简单的密码（例如：'rootpassword'）用于初始 SSH 访问
-if ! grep -q "^root:x:0:0:root:" /etc/passwd; then
-    # 如果 root 用户不存在，则创建它 (在 Debian 基础镜像中不太可能，但保险起见)
-    useradd -ms /bin/zsh root
-fi
+# --- 密码设置 (修复: 读取环境变量) ---
+# 检查环境变量 ROOT_PASSWORD 是否设置
+CONTAINER_PASSWORD="${ROOT_PASSWORD:-rootpassword}"
 
-# 设置密码
-echo "root:rootpassword" | chpasswd
+# 为 root 用户设置密码
+echo "root:${CONTAINER_PASSWORD}" | chpasswd
 echo "Root password has been set."
 
 # --- 启动 SSH 服务 ---
