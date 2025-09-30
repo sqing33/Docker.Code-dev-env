@@ -1,48 +1,37 @@
 #!/bin/bash
+set -e
 
-# ==========================================================
-# 检查并生成 SSH Host Keys
-# ----------------------------------------------------------
-# 如果 /etc/ssh/ 目录下没有主机密钥，sshd 会退出。
-# 必须先生成这些密钥才能启动服务。
-# ==========================================================
-
-HOSTKEY_RSA="/etc/ssh/ssh_host_rsa_key"
-
-if [ ! -f "$HOSTKEY_RSA" ]; then
-    echo "SSH host keys not found. Generating new keys..."
-    # 确保 sshd 启动所需的目录权限正确
-    ssh-keygen -A # 自动生成所有标准密钥类型 (RSA, ECDSA, ED25519)
-    echo "SSH host keys generated successfully."
-else
+# --- SSH Host Key 生成 ---
+# 检查是否存在 SSH 主机密钥，如果不存在则生成
+if [ -f "/etc/ssh/ssh_host_rsa_key" ]; then
     echo "SSH host keys found. Skipping generation."
+else
+    echo "SSH host keys not found. Generating new keys..."
+    # 生成主机密钥 (使用 Debian 命令)
+    /usr/sbin/ssh-keygen -A
+    echo "SSH host keys generated successfully."
 fi
 
-# ==========================================================
-# 启动配置
-# ==========================================================
-
-# 设置Go环境变量，确保它们对通过entrypoint启动的sshd子进程可见
-export PATH="/usr/local/go/bin:${PATH}"
-export GOPATH="/app"
+# --- 环境设置 ---
 echo "Go environment variables (PATH, GOPATH) configured."
 
-
-# 如果ROOT_PASSWORD环境变量存在，则设置root用户的密码
-if [ -n "$ROOT_PASSWORD" ]; then
-    echo "root:$ROOT_PASSWORD" | chpasswd
-    echo "Root password has been set."
-else
-    echo "Warning: ROOT_PASSWORD environment variable not set. Root login might require SSH keys or be disabled."
+# --- 密码设置 (SSH 登录所必需) ---
+# 为 root 用户设置一个简单的密码（例如：'rootpassword'）用于初始 SSH 访问
+if ! grep -q "^root:x:0:0:root:" /etc/passwd; then
+    # 如果 root 用户不存在，则创建它 (在 Debian 基础镜像中不太可能，但保险起见)
+    useradd -ms /bin/zsh root
 fi
 
-# 启动SSH服务
-echo "Starting SSH service on port 18822..."
-# -D: 不作为守护进程运行
-# -e: 强制sshd将日志发送到stderr，以便Docker捕获
-/usr/sbin/sshd -D -e &
+# 设置密码
+echo "root:rootpassword" | chpasswd
+echo "Root password has been set."
 
-# 等待后台进程(sshd)结束，保持容器运行
-# 这使得sshd成为容器的主要服务，其输出被正确捕获为日志
+# --- 启动 SSH 服务 ---
+echo "Starting SSH service on port 18822..."
+# 使用 -D 标志在前台运行 SSHD，并指定端口
+/usr/sbin/sshd -D -p 18822 &
+
+# --- 保持容器存活 ---
 echo "Keeping container alive..."
+# 等待后台进程（sshd）结束，从而保持容器运行
 wait
