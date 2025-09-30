@@ -56,47 +56,50 @@ RUN mkdir -p /app/pnpm_store && \
     pnpm config set store-dir /app/pnpm_store
 
 # 4. SSH 服务器配置（确保 root 登录和 TCP 转发生效）
-# 启用 root 登录
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-    # 启用 TCP 转发，这是 VS Code 远程连接的关键
     sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/' /etc/ssh/sshd_config && \
-    # 添加 SSH 端口和禁用 PAM 兼容性
     echo 'Port 18822' >> /etc/ssh/sshd_config && \
     sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
-    # 创建必要的运行目录
     mkdir -p /run/sshd
 
 # 5. 配置 Zsh (Oh My Zsh, P10k 主题, 插件)
-# Zsh 插件自定义目录
 ENV ZSH_CUSTOM /root/.oh-my-zsh/custom/
 # 1) 安装 Oh My Zsh
 RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/install_omz.sh && \
     sh /tmp/install_omz.sh --unattended && \
     rm /tmp/install_omz.sh
-
 # 2) 安装 Powerlevel10k 主题
-RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k && \
-    # 3) 安装 zsh-autosuggestions 插件
-    git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions && \
-    # 4) 安装 zsh-syntax-highlighting 插件
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
+RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
+# 3) 安装 zsh-autosuggestions 插件
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plugins/zsh-autosuggestions
+# 4) 安装 zsh-syntax-highlighting 插件
+RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
 
-# 6. 创建 .zshrc 配置
-RUN echo '# Zsh 配置' > /root/.zshrc && \
-    echo 'ZSH="/root/.oh-my-zsh"' >> /root/.zshrc && \
-    echo 'POWERLEVEL9K_INSTANT_PROMPT=quiet' >> /root/.zshrc && \
+# 6. 创建 .zshrc 配置 (优化版本)
+RUN echo '# Path to your oh-my-zsh installation.' > /root/.zshrc && \
+    echo 'export ZSH="/root/.oh-my-zsh"' >> /root/.zshrc && \
+    echo '' >> /root/.zshrc && \
+    echo '# Set name of the theme to load' >> /root/.zshrc && \
     echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> /root/.zshrc && \
+    echo '# To enable Powerlevel10k instant prompt, run `p10k configure` and restart zsh' >> /root/.zshrc && \
+    echo '# POWERLEVEL9K_INSTANT_PROMPT=quiet' >> /root/.zshrc && \
+    echo '' >> /root/.zshrc && \
+    echo '# Zsh Plugins' >> /root/.zshrc && \
     echo 'plugins=(git fzf zsh-autosuggestions zsh-syntax-highlighting)' >> /root/.zshrc && \
+    echo '' >> /root/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /root/.zshrc && \
-    echo '[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh' >> /root/.zshrc
+    echo '' >> /root/.zshrc && \
+    echo '# Go Environment Variables' >> /root/.zshrc && \
+    echo 'export PATH="/usr/local/go/bin:${PATH}"' >> /root/.zshrc && \
+    echo 'export GOPATH="/app"' >> /root/.zshrc
 
 # 7. 复制 Go 环境和 entrypoint 脚本
 COPY --from=builder /usr/local/go /usr/local/go
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# 设置 Go 环境变量
+# 设置 Go 环境变量 (为非 Zsh 场景保留)
 ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GOPATH="/app"
 RUN mkdir -p ${GOPATH}/bin ${GOPATH}/src
