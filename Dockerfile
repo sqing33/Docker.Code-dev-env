@@ -31,7 +31,7 @@ FROM python:3.12-alpine
 WORKDIR /app
 
 # 1. 安装 Alpine 上的运行时依赖
-# 添加 nodejs, npm, zsh, git, 和 fzf。
+# 添加 nodejs, npm, zsh, git, fzf, 和 shadow (用于 chsh 命令)
 RUN apk add --no-cache \
     openssh-server \
     sudo \
@@ -40,7 +40,8 @@ RUN apk add --no-cache \
     npm \
     zsh \
     git \
-    fzf  # <-- 新增 fzf 工具
+    fzf \
+    shadow # <-- **新增 shadow 包，修复 chsh 错误**
 
 # 设置 root 用户的默认 shell 为 Zsh
 RUN chsh -s /bin/zsh root
