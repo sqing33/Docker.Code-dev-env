@@ -54,11 +54,16 @@ RUN pip install uv && \
 RUN mkdir -p /app/pnpm_store && \
     pnpm config set store-dir /app/pnpm_store
 
-# 4. SSH服务器配置 (修复: 启用 TCP 转发)
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+# 4. SSH服务器配置 (最终修复: 确保 TCP 转发生效)
+# 复制默认配置到一个临时文件
+RUN cp /etc/ssh/sshd_config /etc/ssh/sshd_config.orig && \
+    # 替换或添加我们需要的配置
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
+    # 确保 AllowTcpForwarding 存在并设置为 yes
     echo 'AllowTcpForwarding yes' >> /etc/ssh/sshd_config && \
     echo 'Port 18822' >> /etc/ssh/sshd_config && \
+    # 创建必要的运行目录
     mkdir -p /run/sshd
 
 # 5. 配置 Zsh (Oh My Zsh, P10k 主题, 插件)
