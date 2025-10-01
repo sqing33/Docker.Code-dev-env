@@ -40,7 +40,7 @@ RUN apt-get update && \
         procps \
         && rm -rf /var/lib/apt/lists/*
 
-# 安装 Node.js
+# 安装 Node.js v20.x 以满足项目依赖要求
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y --no-install-recommends nodejs
 
@@ -76,7 +76,7 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plu
 # 3) 安装 zsh-syntax-highlighting 插件
 RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
 
-# 6. 创建 .zshrc 配置
+# 6. 创建 .zshrc 配置 (★ 最终修复版 ★)
 RUN echo '# Path to your oh-my-zsh installation.' > /root/.zshrc && \
     echo 'export ZSH="/root/.oh-my-zsh"' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
@@ -88,8 +88,10 @@ RUN echo '# Path to your oh-my-zsh installation.' > /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
-    echo '# fzf shell integration (官方推荐方式)' >> /root/.zshrc && \
-    echo 'source <(fzf --zsh)' >> /root/.zshrc && \
+    echo '# fzf shell integration (适用于 Debian/apt 安装的版本)' >> /root/.zshrc && \
+    echo 'if [ -f /usr/share/fzf/shell/key-bindings.zsh ]; then' >> /root/.zshrc && \
+    echo '  source /usr/share/fzf/shell/key-bindings.zsh' >> /root/.zshrc && \
+    echo 'fi' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo '# Go Environment Variables' >> /root/.zshrc && \
     echo 'export PATH="/usr/local/go/bin:${PATH}"' >> /root/.zshrc && \
