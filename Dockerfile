@@ -28,19 +28,21 @@ FROM python:3.12-slim-bookworm as stage-1
 WORKDIR /app
 
 # 1. 安装 Debian 运行时依赖
-# 安装 openssh-server, sudo, curl, nodejs, npm, zsh, git, fzf 等开发工具
+# 安装 openssh-server, sudo, curl, zsh, git, fzf 等开发工具
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         openssh-server \
         sudo \
         curl \
-        nodejs \
-        npm \
         zsh \
         git \
         fzf \
         procps \
         && rm -rf /var/lib/apt/lists/*
+
+# 安装 Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs
 
 # 设置 root 用户的默认 shell 为 Zsh
 RUN chsh -s /bin/zsh root
@@ -55,7 +57,7 @@ RUN pip install uv && \
 RUN mkdir -p /app/pnpm_store && \
     pnpm config set store-dir /app/pnpm_store
 
-# 4. SSH 服务器配置（确保 root 登录和 TCP 转发生效）
+# 4. SSH 服务器配置
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
     sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/' /etc/ssh/sshd_config && \
@@ -63,7 +65,7 @@ RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/
     sed -i 's/UsePAM yes/UsePAM no/' /etc/ssh/sshd_config && \
     mkdir -p /run/sshd
 
-# 5. 配置 Zsh (Oh My Zsh, P10k 主题, 插件)
+# 5. 配置 Zsh (Oh My Zsh, 插件)
 ENV ZSH_CUSTOM /root/.oh-my-zsh/custom/
 # 1) 安装 Oh My Zsh
 RUN curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh -o /tmp/install_omz.sh && \
@@ -74,19 +76,20 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM}/plu
 # 3) 安装 zsh-syntax-highlighting 插件
 RUN git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting
 
-# 6. 创建 .zshrc 配置 (优化版本)
+# 6. 创建 .zshrc 配置
 RUN echo '# Path to your oh-my-zsh installation.' > /root/.zshrc && \
     echo 'export ZSH="/root/.oh-my-zsh"' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo '# Set name of the theme to load' >> /root/.zshrc && \
     echo 'ZSH_THEME="robbyrussell"' >> /root/.zshrc && \
-    echo '# To enable Powerlevel10k instant prompt, run `p10k configure` and restart zsh' >> /root/.zshrc && \
-    echo '# POWERLEVEL9K_INSTANT_PROMPT=quiet' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
-    echo '# Zsh Plugins' >> /root/.zshrc && \
-    echo 'plugins=(git fzf zsh-autosuggestions zsh-syntax-highlighting)' >> /root/.zshrc && \
+    echo '# Zsh Plugins (fzf 已从此列表移除)' >> /root/.zshrc && \
+    echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting)' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo 'source $ZSH/oh-my-zsh.sh' >> /root/.zshrc && \
+    echo '' >> /root/.zshrc && \
+    echo '# fzf shell integration (官方推荐方式)' >> /root/.zshrc && \
+    echo 'source <(fzf --zsh)' >> /root/.zshrc && \
     echo '' >> /root/.zshrc && \
     echo '# Go Environment Variables' >> /root/.zshrc && \
     echo 'export PATH="/usr/local/go/bin:${PATH}"' >> /root/.zshrc && \
